@@ -32,7 +32,10 @@ impl AtCoderClient {
             ATCODER_PREFIX, contest_id, page
         );
         let html = util::get_html(&url).await?;
-        let submissions = submission::scrape(&html, contest_id)?;
+        let mut submissions = submission::scrape(&html, contest_id)?;
+        for submission in submissions.iter_mut() {
+            submission.code = submission::scrape_submission_code(contest_id, submission.id).await?;
+        }
         let max_page = submission::scrape_submission_page_count(&html)?;
         Ok(AtCoderSubmissionListResponse {
             max_page,

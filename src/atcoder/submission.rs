@@ -1,6 +1,6 @@
 use super::AtCoderSubmission;
 
-use crate::{Error, Result};
+use crate::{util, Error, Result};
 
 use chrono::DateTime;
 use regex::Regex;
@@ -135,9 +135,30 @@ pub(super) fn scrape(html_text: &str, contest_id: &str) -> Result<Vec<AtCoderSub
                 length,
                 result,
                 execution_time,
+                code: String::new(),
             })
         })
         .collect()
+}
+
+pub(super) async fn scrape_submission_code(contest_id: &str, submission_id: u64) -> Result<String> {
+    let url = format!(
+        "https://atcoder.jp/contests/{}/submissions/{}",
+        contest_id, submission_id
+    );
+    let html = util::get_html(&url)
+        .await
+        .map_err(|_| Error::HtmlParseError)?;
+    let code_selector = Selector::parse(r#"pre[id="submission-code"]"#).unwrap();
+    let code = Html::parse_document(&html)
+        .select(&code_selector)
+        .next()
+        .unwrap()
+        .text()
+        .next()
+        .unwrap()
+        .to_string();
+    Ok(code)
 }
 
 #[cfg(test)]

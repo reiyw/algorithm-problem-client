@@ -26,6 +26,7 @@ pub struct AtCoderSubmission {
     pub length: u64,
     pub result: String,
     pub execution_time: Option<u64>,
+    pub code: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
