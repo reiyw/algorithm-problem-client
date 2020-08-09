@@ -25,6 +25,7 @@ impl AtCoderClient {
         &self,
         contest_id: &str,
         page: Option<u32>,
+        strict: bool,
     ) -> Result<AtCoderSubmissionListResponse> {
         let page = page.unwrap_or(1);
         let url = format!(
@@ -35,14 +36,17 @@ impl AtCoderClient {
         let mut submissions = submission::scrape(&html, contest_id)?;
         for submission in submissions.iter_mut() {
             async_std::task::sleep(std::time::Duration::from_millis(200)).await;
-            submission.code = submission::scrape_submission_code(contest_id, submission.id)
-                .await
-                .map_err(|_| {
+            let code = submission::scrape_submission_code(contest_id, submission.id).await;
+            submission.code = if strict {
+                code.map_err(|_| {
                     Error::SubmissionPageParseError(format!(
                         "Error parsing https://atcoder.jp/contests/{}/submissions/{}",
                         submission.contest_id, submission.id
                     ))
-                })?;
+                })?
+            } else {
+                code.unwrap_or(String::new())
+            };
         }
         let max_page = submission::scrape_submission_page_count(&html)?;
         Ok(AtCoderSubmissionListResponse {
@@ -80,17 +84,23 @@ mod tests {
     #[test]
     fn test_fetch_submission_list() {
         let client = AtCoderClient::default();
-        let response = block_on(client.fetch_atcoder_submission_list("xmascon17", None)).unwrap();
+        let response =
+            block_on(client.fetch_atcoder_submission_list("xmascon17", None, true)).unwrap();
         assert_eq!(response.submissions.len(), 20);
 
-        let response =
-            block_on(client.fetch_atcoder_submission_list("xmascon17", Some(response.max_page)))
-                .unwrap();
+        let response = block_on(client.fetch_atcoder_submission_list(
+            "xmascon17",
+            Some(response.max_page),
+            true,
+        ))
+        .unwrap();
         assert!(!response.submissions.is_empty());
 
-        let response = block_on(
-            client.fetch_atcoder_submission_list("xmascon17", Some(response.max_page + 1)),
-        );
+        let response = block_on(client.fetch_atcoder_submission_list(
+            "xmascon17",
+            Some(response.max_page + 1),
+            true,
+        ));
         assert!(response.is_err());
     }
 }
