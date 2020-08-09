@@ -10,6 +10,8 @@ pub enum Error {
     ParseFloatError(#[from] std::num::ParseFloatError),
     #[error("failed to parse date")]
     ParseDateError(#[from] chrono::format::ParseError),
+    #[error("failed to parse submission page {0}")]
+    SubmissionPageParseError(String),
 }
 
 pub type Result<T> = ::std::result::Result<T, Error>;

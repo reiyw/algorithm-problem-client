@@ -1,5 +1,5 @@
 use crate::util;
-use crate::Result;
+use crate::{Error, Result};
 
 use super::*;
 
@@ -35,7 +35,14 @@ impl AtCoderClient {
         let mut submissions = submission::scrape(&html, contest_id)?;
         for submission in submissions.iter_mut() {
             async_std::task::sleep(std::time::Duration::from_millis(200)).await;
-            submission.code = submission::scrape_submission_code(contest_id, submission.id).await?;
+            submission.code = submission::scrape_submission_code(contest_id, submission.id)
+                .await
+                .map_err(|_| {
+                    Error::SubmissionPageParseError(format!(
+                        "Error parsing https://atcoder.jp/contests/{}/submissions/{}",
+                        submission.contest_id, submission.id
+                    ))
+                })?;
         }
         let max_page = submission::scrape_submission_page_count(&html)?;
         Ok(AtCoderSubmissionListResponse {

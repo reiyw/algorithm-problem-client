@@ -164,6 +164,7 @@ pub(super) async fn scrape_submission_code(contest_id: &str, submission_id: u64)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::executor::block_on;
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -179,5 +180,15 @@ mod tests {
 
         let max_page = scrape_submission_page_count(&contents).unwrap();
         assert_eq!(max_page, 818);
+    }
+
+    #[test]
+    fn test_scrape_submission_code() {
+        let code = block_on(scrape_submission_code("abc172", 14924462));
+        assert!(code.is_ok());
+        let code = block_on(scrape_submission_code("abc172", 14924496));
+        assert!(code.is_ok());
+        let code = block_on(scrape_submission_code("abc172", 14924507));
+        assert!(code.is_ok());
     }
 }
