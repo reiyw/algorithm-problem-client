@@ -34,7 +34,7 @@ impl AtCoderClient {
         let html = util::get_html(&url).await?;
         let mut submissions = submission::scrape(&html, contest_id)?;
         for submission in submissions.iter_mut() {
-            async_std::task::sleep(std::time::Duration::from_millis(500)).await;
+            async_std::task::sleep(std::time::Duration::from_millis(200)).await;
             submission.code = submission::scrape_submission_code(contest_id, submission.id).await?;
         }
         let max_page = submission::scrape_submission_page_count(&html)?;
