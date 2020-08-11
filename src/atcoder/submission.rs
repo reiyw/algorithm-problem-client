@@ -149,7 +149,8 @@ pub(super) async fn scrape_submission_code(contest_id: &str, submission_id: u64)
     let html = util::get_html(&url)
         .await
         .map_err(|_| Error::HtmlParseError)?;
-    let code_selector = Selector::parse(r#"pre[id="submission-code"]"#).unwrap();
+    let code_selector =
+        Selector::parse(r#"pre[id="submission-code"]"#).map_err(|_| Error::HtmlParseError)?;
     let code = Html::parse_document(&html)
         .select(&code_selector)
         .next()
