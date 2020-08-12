@@ -26,6 +26,7 @@ impl AtCoderClient {
         contest_id: &str,
         page: Option<u32>,
         strict: bool,
+        delay_millis: u64,
     ) -> Result<AtCoderSubmissionListResponse> {
         let page = page.unwrap_or(1);
         let url = format!(
@@ -35,7 +36,7 @@ impl AtCoderClient {
         let html = util::get_html(&url).await?;
         let mut submissions = submission::scrape(&html, contest_id)?;
         for submission in submissions.iter_mut() {
-            async_std::task::sleep(std::time::Duration::from_millis(200)).await;
+            async_std::task::sleep(std::time::Duration::from_millis(delay_millis)).await;
             let code = submission::scrape_submission_code(contest_id, submission.id).await;
             submission.code = if strict {
                 code.map_err(|_| {
@@ -85,13 +86,14 @@ mod tests {
     fn test_fetch_submission_list() {
         let client = AtCoderClient::default();
         let response =
-            block_on(client.fetch_atcoder_submission_list("xmascon17", None, true)).unwrap();
+            block_on(client.fetch_atcoder_submission_list("xmascon17", None, true, 200)).unwrap();
         assert_eq!(response.submissions.len(), 20);
 
         let response = block_on(client.fetch_atcoder_submission_list(
             "xmascon17",
             Some(response.max_page),
             true,
+            200,
         ))
         .unwrap();
         assert!(!response.submissions.is_empty());
@@ -100,6 +102,7 @@ mod tests {
             "xmascon17",
             Some(response.max_page + 1),
             true,
+            200,
         ));
         assert!(response.is_err());
     }
